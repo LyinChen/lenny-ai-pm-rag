@@ -19,3 +19,13 @@ print("只有 post_url:", only_post)
 print("只有 youtube_url:", only_yt)
 print("都没有:", len(no_link))
 print(no_link[:10])
+print("\n无链接文件的类型:")
+from collections import Counter
+types = Counter()
+for name in no_link:
+    f = next(ROOT.rglob(name))
+    head = f.read_text(encoding="utf-8").split("---")[1]
+    for line in head.splitlines():
+        if line.startswith("type:"):
+            types[line.split(":", 1)[1].strip().strip('"')] += 1
+print(dict(types))

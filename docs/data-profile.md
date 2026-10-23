@@ -1,44 +1,65 @@
 # 数据画像
+
 ## 规模
 - 文件数：60（播客 50 / newsletter 10）
-- 总词数：866,202；估算 token：约 115 万
+- 总词数：866,202；估算 token：约 115 万（超过 1M 上下文，无法整库塞入）
 - 单篇长度：最短 1,150（state-of-the-product-job-market-in-2025）
   最长 25,594（jason-m-lemkin）；平均 14,436
 - 预计块数（512 token/块）：约 2,256
 
-## 元数据字段
-- 播客：title, date, type, guest, post_url, description, word_count
-  （部分文件另有 youtube_url, video_id, channel，字段不统一，待全量核查）
-- newsletter：title, subtitle, date, type, post_url, word_count
-- 引用链接：youtube_url（有则用）否则 post_url
+## 元数据字段（全量核查，共 60 篇）
+| 字段 | 出现次数 | 说明 |
+|---|---|---|
+| title, date, type, word_count | 60 | 全部具备，可靠 |
+| guest, description | 50 | 仅播客 |
+| subtitle | 10 | 仅 newsletter |
+| post_url | 33 | 缺 27 篇 |
+| youtube_url, video_id | 13 | 稀疏 |
+| channel | 19 | 不统一，不用于过滤 |
 
-## 噪音
-- 播客：开场摘要、结尾 outro、[inaudible] 标记、25 分钟边界处的重复句
-- newsletter：图片行、文末招聘/订阅 CTA、行内超链接
-
-## 内容结构
-- 播客稿：每段有说话人标签 + 时间戳；一个 speaker turn 为一段，
-  通常几十到一百多词，长回答可达数百词
-- 话题转换：由主持人的过渡语标记，边界清晰
-- 噪音：开场宣传/订阅 CTA、newsletter 推广、赞助商口播（如 Framer）、
-  寒暄、书籍/产品推广
+- 可靠过滤字段：type、guest（仅播客）、date
+- 代码必须容错：缺失字段给默认值，不能假设字段存在
 
 ## 引用链接覆盖（全量核查）
-| 情况 | 篇数 |
-|---|---|
-| 只有 post_url | 33 |
-| 只有 youtube_url | 13 |
-| 两者都有 | 0 |
-| 都没有 | 14（23%） |
+| 情况 | 篇数 | 占比 |
+|---|---|---|
+| 只有 post_url | 33 | 55% |
+| 只有 youtube_url | 13 | 22% |
+| 两者都有 | 0 | 0% |
+| 都没有 | 14 | 23% |
+
+- 两个链接互斥
+- 无链接的 14 篇全部是播客（占播客 28%）；newsletter 10 篇均有 post_url
 
 ## 引用规则
-- 有 youtube_url → 用它；否则有 post_url → 用它；否则无链接
-- 链接不全时，最低保证展示：标题 + 嘉宾 + 日期 + 时间戳
+- 有哪个链接用哪个（youtube_url 或 post_url）；都没有则无链接
+- 最低保证展示：标题 + 嘉宾 + 日期 + 时间戳
 - 不自行拼接链接（编错的链接比没有更伤可信度）
-- 无链接的文档在界面上标注"暂无原文链接"
+- 无链接的文档在界面标注"暂无原文链接"
+
+## 内容结构
+- 播客稿：格式为「**说话人** (时间戳):」+ 换行 + 正文
+  一个 speaker turn 为一段，通常几十到一百多词，长回答可达数百词
+- 话题转换：常由主持人的过渡语标记，边界较清晰
+- newsletter：Markdown 标题（##）分节，含大量行内超链接
+
+## 噪音清单
+| 噪音 | 出现在 | 验证状态 |
+|---|---|---|
+| 图片行 `![Image from ...](url)` | newsletter | 已见于样本 |
+| 文末招聘广告、订阅 CTA、署名 | newsletter | 已见于样本 |
+| 行内超链接 `[文字](url)` | newsletter | 已见于样本 |
+| `[inaudible 00:10:10]` 标记 | 播客 | 已见于样本 |
+| 整 25 分钟处的重复句（如 00:25:00、00:50:00） | 播客 | 待全量验证 |
+| 开场摘要、结尾 outro | 播客 | 已见于样本 |
+| 赞助商口播（如 Framer） | 部分播客 | 待全量验证，Peter Sellis 一篇无 |
+| 寒暄 | 播客 | 不清洗（量小、误删风险大） |
 
 ## 对 Day 3 的影响
-- 切块要保留：title, guest, date, type, youtube_url，
-  以及每块的说话人和起始时间戳
-- 需要清洗：把 frontmatter 转成元数据；移除开场宣传和赞助商口播
-- 不清洗：寒暄（量小、误删风险大，MVP 阶段忽略）
+- 切块要保留：title, type, date, guest, 链接（youtube_url 或 post_url）、
+  每块的说话人和起始时间戳
+- 解析 frontmatter 时容错（缺字段给默认值）
+- 清洗：删图片行、结尾 CTA/招聘、`[inaudible]`、边界重复句；
+  行内链接只保留文字；开场摘要与 outro 视统计结果决定
+- 切块：播客按说话人切、合并到约 400-500 token；
+  newsletter 按 ## 标题切
