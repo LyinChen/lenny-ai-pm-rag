@@ -13,8 +13,17 @@ flagged = []
 cut_log = []
 
 AD_TRIGGER = re.compile(
-    r"supporting sponsor|today's sponsor|this season's sponsor|"
-    r"word from our (?:wonderful |amazing )?sponsors|brought to you by", re.I)
+    r"supporting sponsor|today[’']s sponsor|this season[’']s sponsor|"
+    r"word from our (?:wonderful |amazing )?sponsors|brought to you by|"
+    r"you know what we don[’']t love talking about|that[’']s where vanta comes in|"
+    r"your marketing website sets the tone", re.I)
+AD_LEAD = re.compile(r"here[’']s a puzzle for you|my podcast guest and i love talking about", re.I)
+AD_END = re.compile(
+    r"vanta\.com|workos\.com|getdx\.com|sentry\.io|\.com/lenny|"
+    r"rules and restrictions may apply", re.I)
+AD_LOOKAHEAD = 8     # 最多向后找 8 段
+AD_MAX_TOTAL = 700   # 一条广告总长超过 700 词视为异常，不自动整块删
+
 AD_CONT = re.compile(
     r"\bvanta\b|\bworkos\b|\bsentry\b|getdx|\bDX\b|\.com/lenny|SOC 2|enterprise-ready", re.I)
 AD_MAX_WORDS = 200   # 主持人广告通常 ≤ 175 词
@@ -63,6 +72,7 @@ CUT_PATTERNS = [
     re.compile(r"^#+\s*Hiring", re.M),
     re.compile(r"^Sincerely,", re.M),
     re.compile(r"^\*\*If you.re finding this newsletter valuable", re.M),
+    re.compile(r"^##\s*📣\s*Join Lenny", re.M),
 ]
 
 
@@ -70,13 +80,14 @@ def clean_newsletter(body):
     cut_at = len(body)
     for p in CUT_PATTERNS:
         m = p.search(body)
+        re.compile(r"^##\s*📣\s*Join Lenny", re.M),
         if m:
             cut_at = min(cut_at, m.start())
     if cut_at < len(body):
         cut_log.append(f"{wc(body[cut_at:])}词 | {body[cut_at:cut_at+70]!r}")
         stats["newsletter结尾(词)"] += wc(body[cut_at:])
         body = body[:cut_at]
-        body, n = re.subn(r"^\*Have a fulfilling[^\n]*\*\s*$", "", body, flags=re.M)
+        body, n = re.subn(r"^\*?Have a fulfilling[^\n]*$", "", body, flags=re.M)
     stats["告别语行"] += n
     body, n = re.subn(r"^!\[.*?\]\(.*?\)\s*$", "", body, flags=re.M)
     stats["图片行"] += n
@@ -121,34 +132,88 @@ def parse_turns(body):
     return turns
 
 def remove_ads(turns, doc):
-    """只删广告句：触发句之前的正文保留；以 '...' 开头的是被截断广告的续段"""
-    out, in_ad = [], False
-    for t in turns:
-        host = t["speaker"].startswith("Lenny")
-        text, n = t["text"], wc(t["text"])
-        m = AD_TRIGGER.search(text) if host else None
-        if m and n <= AD_MAX_WORDS:
-            cut = max(text.rfind(p, 0, m.start()) for p in (". ", "? ", "! "))
-            keep = text[:cut + 1].strip() if cut >= 0 else ""
-            if wc(keep) < 8:
-                keep = ""
-            ad_words = n - wc(keep)
-            stats["赞助商口播(段)"] += 1
-            stats["赞助商口播(词)"] += ad_words
-            dropped_ads.append(
-                f'{doc} {t["ts"]} 删{ad_words}词/留{wc(keep)}词 | 删: {text[len(keep):].strip()[:80]}')
+    out, i = [], 0
+    while i < len(turns):
+        t = turns[i]
+        m = AD_TRIGGER.search(t["text"]) if t["speaker"].startswith("Lenny") else None
+        if not m:
+            out.append(t)
+            i += 1
+            continue
+        n = wc(t["text"])
+        if n > AD_MAX_WORDS:
+            flagged.append(f'{doc} {t["ts"]} 超长{n}词含广告词，未处理')
+            out.append(t)
+            i += 1
+            continue
+        # 触发句之前的正文保留（广告引子除外）
+        pre = t["text"][:m.start()]
+        lead = AD_LEAD.search(pre)
+        if lead:
+            keep = pre[:lead.start()].strip()
+        else:
+            cut = max(pre.rfind(p) for p in (". ", "? ", "! "))
+            keep = pre[:cut + 1].strip() if cut >= 0 else ""
+        if wc(keep) < 8:
+            keep = ""
+        # 向后找广告结尾标志（公司网址）
+        end, total = None, 0
+        for j in range(i, min(i + AD_LOOKAHEAD, len(turns))):
+            tj = turns[j]
+            wj = wc(tj["text"])
+            if not tj["speaker"].startswith("Lenny") or (j > i and wj > AD_MAX_WORDS):
+                break
+            total += wj
+            if total > AD_MAX_TOTAL:
+                break
+            if AD_END.search(tj["text"]):
+                end = j
+                break
+        if end is None:   # 降级：沿用关键词续段规则，并记入待复核
+            end = i
+            while end + 1 < len(turns):
+                nx = turns[end + 1]
+                if (nx["speaker"].startswith("Lenny") and wc(nx["text"]) <= AD_MAX_WORDS
+                        and (AD_CONT.search(nx["text"]) or nx["text"].startswith("..."))):
+                    end += 1
+                else:
+                    break
+            flagged.append(f'{doc} {t["ts"]} 未找到广告结尾标志，按关键词处理，请复核')
+
+                # 广告尾巴可能溢出到下一段（网址之后句子还没说完）
+        while end + 1 < len(turns):
+            nx = turns[end + 1]
+            head = " ".join(nx["text"].split()[:40])
+            if (nx["speaker"].startswith("Lenny") and wc(nx["text"]) <= AD_MAX_WORDS
+                    and (AD_CONT.search(head) or AD_END.search(head))):
+                end += 1
+            else:
+                break
+        
+        # 广告结尾句之后的正文保留
+        tail = ""
+        ends = list(AD_END.finditer(turns[end]["text"]))
+        if ends:
+            last = turns[end]["text"]
+            e = re.search(r"[.!?](?:\s|$)", last[ends[-1].end():])
+            if e:
+                tail = last[ends[-1].end() + e.end():].strip()
+        if wc(tail) < 8:
+            tail = ""
+        removed = sum(wc(x["text"]) for x in turns[i:end + 1]) - wc(keep) - wc(tail)
+        stats["赞助商口播(段)"] += 1
+        stats["赞助商口播(词)"] += removed
+        dropped_ads.append(
+            f'{doc} {t["ts"]}-{turns[end]["ts"]} 删{removed}词/留头{wc(keep)}尾{wc(tail)} | '
+            f'{t["text"][m.start():m.start() + 70]}')
+        if end == i and keep and tail:
+            out.append({**t, "text": keep + " " + tail})
+        else:
             if keep:
                 out.append({**t, "text": keep})
-            in_ad = True
-            continue
-        if m:
-            flagged.append(f'{doc} {t["ts"]} {n}词: {text[:90]}')
-        elif in_ad and host and n <= AD_MAX_WORDS and (AD_CONT.search(text) or text.startswith("...")):
-            stats["广告续段(段)"] += 1
-            dropped_ads.append(f'{doc} {t["ts"]} 续段删{n}词 | {text[:80]}')
-            continue
-        in_ad = False
-        out.append(t)
+            if tail:
+                out.append({**turns[end], "text": tail})
+        i = end + 1
     return out
 
 def clean_turns(turns, doc):
