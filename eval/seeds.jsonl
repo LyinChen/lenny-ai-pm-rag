@@ -1,0 +1,20 @@
+{"id": "q01", "zh": "怎么给 AI 产品定义成功指标？", "en": "How should I define success metrics for an AI product?", "doc": "beyond-vibe-checks-a-pms-complete-guide-to-evals", "regex": "eval\\w*\\s+(metric|criteria)|metrics? .*eval"}
+{"id": "q02", "zh": "怎么写一份能真正用起来的 eval 测试集？", "en": "How do I write a good eval dataset for my AI product?", "doc": "beyond-vibe-checks-a-pms-complete-guide-to-evals", "regex": "dataset|test set|golden"}
+{"id": "q03", "zh": "AI 产品原型该怎么快速做出来？", "en": "How do I quickly build a prototype of an AI feature?", "doc": "a-guide-to-ai-prototyping-for-product-managers", "regex": "prototyp"}
+{"id": "q04", "zh": "不懂技术的 PM 怎么用 Cursor 自己做出产品？", "en": "How can a non-technical PM build with Cursor?", "doc": "zevi-arnovitz", "regex": "Cursor"}
+{"id": "q05", "zh": "用户不信任 AI 的输出，该怎么办？", "en": "How do I handle users not trusting AI output?", "doc": "aishwarya-naresh-reganti--kiriti-badam", "regex": "trust"}
+{"id": "q06", "zh": "AI 产品出了幻觉或事故，怎么止损？", "en": "What should you do when an AI product hallucinates and causes an incident?", "doc": "aishwarya-naresh-reganti--kiriti-badam", "regex": "Air Canada|hallucinat"}
+{"id": "q07", "zh": "Agent 该给多大自主权？怎么一步步放权？", "en": "How much agency should an AI agent have? How do you increase it step by step?", "doc": "aishwarya-naresh-reganti--kiriti-badam", "regex": "agency|autonom"}
+{"id": "q08", "zh": "怎么避免优化虚荣指标，找到真正的目标函数？", "en": "How do you avoid optimizing vanity proxies and find the real objective function?", "doc": "edwin-chen", "regex": "objective function"}
+{"id": "q09", "zh": "怎么评估多个模型版本并决定发哪一个？", "en": "How do you evaluate candidate model checkpoints and pick one to release?", "doc": "edwin-chen", "regex": "checkpoint"}
+{"id": "q10", "zh": "AI 时代产品经理会变成什么角色？", "en": "What is the PM role becoming in the AI era?", "doc": "tomer-cohen", "regex": "full stack|builder|role"}
+{"id": "q11", "zh": "AI 会取代产品经理吗？", "en": "Will AI replace product managers?", "doc": "nikhyl-singhal-2", "regex": "PMs?|product manager"}
+{"id": "q12", "zh": "怎么建立一个高人才密度的团队？", "en": "How do you build a high talent density team?", "doc": "adam-ward", "regex": "talent density|bar|density"}
+{"id": "q13", "zh": "怎么用 ChatGPT 搭一个产品经理的「第二大脑」？", "en": "How do I build a PM second brain with ChatGPT?", "doc": "how-to-build-your-pm-second-brain-with-chatgpt", "regex": "second brain|note"}
+{"id": "q14", "zh": "大家用 vibe coding 都在做什么东西？", "en": "What are people actually building with vibe coding?", "doc": "what-people-are-vibe-coding-and-actually-using", "regex": "vibe cod"}
+{"id": "q15", "zh": "AI 模型内部到底是怎么思考和推理的？", "en": "How do AI models actually think and reason inside?", "doc": "emmanuel-ameisen", "regex": "think|reason"}
+{"id": "q16", "zh": "MCP 是什么？它能做什么？", "en": "What is MCP and what does it let AI do?", "doc": "an-ai-glossary", "regex": "MCP|model context protocol"}
+{"id": "q17", "zh": "怎么让 AI agent 能用上我的产品？", "en": "How do I make my product usable by AI agents?", "doc": "dan-shipper-2", "regex": "agent"}
+{"id": "q18", "zh": "怎么谈下 10 万美元以上的企业级大单？", "en": "How do you close $100K+ enterprise deals?", "doc": "jen-abel-3", "regex": "100K|enterprise deal|deal"}
+{"id": "q19", "zh": "AI 产品团队怎么做到比别人迭代更快？", "en": "How does Anthropic's product team move faster than everyone else?", "doc": "cat-wu", "regex": "fast|speed|faster"}
+{"id": "q20", "zh": "产品停止增长时，应该问自己哪几个问题？", "en": "What questions should I ask when my product stops growing?", "doc": "jason-cohen", "regex": "growth|question"}
