@@ -4,3 +4,6 @@ data/
 chroma_db/
 __pycache__/
 .DS_Store
+docs/judge-spotcheck.md
+docs/judge-spotcheck.md
+docs/retrieval-check-day4.md
