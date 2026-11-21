@@ -1,9 +1,15 @@
+# 环境与密钥
 .venv/
 .env
+
+# 原数据与向量库（不转存，可本地重建）
 data/
 chroma_db/
+
+# 缓存
 __pycache__/
 .DS_Store
-docs/judge-spotcheck.md
+
+# 含访谈原文片段，由脚本本地再生成
 docs/judge-spotcheck.md
 docs/retrieval-check-day4.md

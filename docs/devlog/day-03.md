@@ -57,4 +57,17 @@
 - 5 条"未找到广告结尾标志"（boris、brian、jenny、jessica、sherwin）：
   用原始数据取证，广告后下一段均为嘉宾发言，时间戳空档约 2 分钟，
   与广告时长吻合，说明广告正文本来就不在转写稿里，已关闭
-- WorkOS 2 块（simon-willison-0064/0065）：嘉宾聊天中的 "your sponsor of your
+- WorkOS 2 块（simon-willison-0064/0065）：查原文，是主持人在提问开头顺手替嘉宾的博客赞助商
+  打的一句招呼——"quick shout out, WorkOS, your sponsor of your blog right now,
+  who I'm also working with. Go WorkOS. WorkOS.com."，嵌在对话里，不是独立广告段。
+  删掉会把 "Share more about that, but just quick shout out, … Talk about this consulting
+  piece" 这句话切断，所以保留，登记进 `validate_chunks.py` 的 ALLOWED 白名单并写明理由。
+- 白名单的到期条件：这两条按 `chunk_id` 登记。只要再改清洗或切块规则、块序号发生偏移，
+  就必须重新核对一遍——同一天已经踩过一次（第 10 条）。
+
+## 收工判断
+- 验收以 `validate_chunks.py` 为准：规则每改一次就整跑一遍，红灯必须能解释，
+  解释不了的才回头改规则。
+- 已知保留项：WorkOS 2 块（上面已取证）、超长块 9 个（0.3%，接受）、
+  无原文链接块 767 个（27.3%，由引用降级规则兜住）。
+- 停在"够用且可审计"，不追零噪音；剩下的由后面的验收题决定值不值得处理。
