@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import numpy as np
 
 import chromadb
 from dotenv import load_dotenv
@@ -41,10 +42,28 @@ def rewrite(question):
     return qs[:3] or [question]
 
 
+QVEC = {}   # 同一次运行里，同一个问题只算一次坐标
+
+
+def query_vector(text, verify=True):
+    if text in QVEC:
+        return QVEC[text]
+    v = np.array(emb.get_query_embedding(text), dtype=np.float32)
+    if verify:                      # 算两次对一下，防"坏坐标"
+        v2 = np.array(emb.get_query_embedding(text), dtype=np.float32)
+        cos = float(v @ v2 / (np.linalg.norm(v) * np.linalg.norm(v2)))
+        if cos < 0.999:
+            print(f"[warn] 坐标异常 cos={cos:.4f}，改用第二次")
+            v = v2
+    QVEC[text] = v.tolist()
+    return v.tolist()
+
+
 def dense(query, n=20):
-    r = col.query(query_embeddings=[emb.get_query_embedding(query)], n_results=n,
+    r = col.query(query_embeddings=[query_vector(query)], n_results=n,
                   include=["distances"])
     return list(zip(r["ids"][0], r["distances"][0]))
+
 
 
 def bm25(query, n=20):
